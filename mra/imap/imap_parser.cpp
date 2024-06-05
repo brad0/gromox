@@ -373,13 +373,12 @@ static tproc_status ps_stat_rdcmd(imap_context *pcontext)
 			return ps_end_processing(pcontext);
 		}
 		/* check if context is timed out */
-		if (current_time - pcontext->connection.last_timestamp < g_timeout)
+		auto dif = current_time - pcontext->connection.last_timestamp;
+
+		if (!pcontext->is_authed() && dif < g_timeout)
 			return tproc_status::polling_rdonly;
-		if (pcontext->is_authed()) {
-			std::unique_lock ll_hold(g_list_lock);
-			g_sleeping_list.push_back(pcontext);
-			return tproc_status::sleeping;
-		}
+		if (pcontext->is_authed() && dif < g_autologout_time)
+			return tproc_status::polling_rdonly;
 		/* IMAP_CODE_2180011: BAD timeout */
 		size_t string_length = 0;
 		auto imap_reply_str = resource_get_imap_code(1811, 1, &string_length);

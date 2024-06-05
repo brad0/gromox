@@ -137,19 +137,6 @@ errno_t evqueue::mod(SCHEDULE_CONTEXT *ctx, bool add)
 #endif
 }
 
-errno_t evqueue::del(SCHEDULE_CONTEXT *ctx)
-{
-	auto fd = contexts_pool_get_context_socket(ctx);
-#ifdef HAVE_SYS_EPOLL_H
-	return epoll_ctl(m_fd, EPOLL_CTL_DEL, fd, nullptr);
-#elif defined(HAVE_SYS_EVENT_H)
-	struct kevent ev[2];
-	EV_SET(&ev[0], fd, EVFILT_READ, EV_DELETE, 0, 0, nullptr);
-	EV_SET(&ev[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, nullptr);
-	return kevent(m_fd, ev, std::size(ev), nullptr, 0, nullptr);
-#endif
-}
-
 static void context_init(SCHEDULE_CONTEXT *pcontext)
 {
 	if (NULL == pcontext) {
@@ -241,14 +228,11 @@ static void *ctxp_scanwork(void *pparam)
 				goto CHECK_TAIL;
 			}
 			if (current_time - contexts_pool_get_context_timestamp(pcontext) >= g_time_out) {
-				if (g_poll_ctx.del(pcontext) != 0) {
-					mlog(LV_DEBUG, "contexts_pool: failed to remove event from epoll");
-				} else {
-					pcontext->b_waiting = FALSE;
-					pcontext->type = sctx_status::switching;
-					double_list_append_as_tail(&temp_list, pnode);
-					goto CHECK_TAIL;
-				}
+				pcontext->type = sctx_status::switching;
+				pcontext->b_waiting = true;
+				pcontext->b_timeout = true;
+				double_list_append_as_tail(&temp_list, pnode);
+				goto CHECK_TAIL;
 			}
 			double_list_append_as_tail(&g_context_lists[static_cast<int>(sctx_status::polling)], pnode);
  CHECK_TAIL:
