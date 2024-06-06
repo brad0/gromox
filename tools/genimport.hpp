@@ -86,6 +86,7 @@ enum {
 	DELIVERY_MRAUTOPROC = 0x10000U,
 };
 
+extern std::string g_dstuser;
 extern const char *g_storedir;
 extern unsigned int g_user_id, g_show_tree, g_show_props, g_wet_run, g_public_folder;
 
