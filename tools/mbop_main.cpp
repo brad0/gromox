@@ -66,10 +66,12 @@ static void delcount(eid_t fid, uint32_t *delc, uint32_t *fldc)
 
 namespace delmsg {
 
-static int main(int argc, const char **argv)
+static int main(int argc, char **argv)
 {
-	if (HX_getopt(g_options_table, &argc, &argv, HXOPT_USAGEONERR) != HXOPT_ERR_SUCCESS)
+	if (HX_getopt5(g_options_table, argv, &argc, &argv,
+	    HXOPT_USAGEONERR) != HXOPT_ERR_SUCCESS)
 		return EXIT_FAILURE;
+	auto cl_0 = make_scope_exit([&]() { HX_zvecfree(argv); });
 	if (g_folderstr != nullptr) {
 		char *end = nullptr;
 		uint64_t fid = strtoul(g_folderstr, &end, 0);
@@ -234,10 +236,12 @@ static int do_hierarchy(eid_t fid)
 	return EXIT_SUCCESS;
 }
 
-static int main(int argc, const char **argv)
+static int main(int argc, char **argv)
 {
-	if (HX_getopt(g_options_table, &argc, &argv, HXOPT_USAGEONERR) != HXOPT_ERR_SUCCESS)
+	if (HX_getopt5(g_options_table, argv, &argc, &argv,
+	    HXOPT_USAGEONERR) != HXOPT_ERR_SUCCESS)
 		return EXIT_FAILURE;
+	auto cl_0 = make_scope_exit([&]() { HX_zvecfree(argv); });
 	if (g_del_flags & DEL_FOLDERS && g_recurse) {
 		fprintf(stderr, "Combining -R and --nuke-folders is unreasonable: when you nuke folders, you cannot recurse into them anymore.\n");
 		return EXIT_FAILURE;
@@ -309,10 +313,12 @@ static constexpr HXoption g_options_table[] = {
 	HXOPT_TABLEEND,
 };
 
-static int main(int argc, const char **argv)
+static int main(int argc, char **argv)
 {
-	if (HX_getopt(g_options_table, &argc, &argv, HXOPT_USAGEONERR) != HXOPT_ERR_SUCCESS)
+	if (HX_getopt5(g_options_table, argv, &argc, &argv,
+	    HXOPT_USAGEONERR) != HXOPT_ERR_SUCCESS)
 		return EXIT_FAILURE;
+	auto cl_0 = make_scope_exit([&]() { HX_zvecfree(argv); });
 	if (argc < 2)
 		fprintf(stderr, "mbop/purge: No folders specified, no action taken.\n");
 	auto age = rop_util_unix_to_nttime(time(nullptr) - HX_strtoull_sec(znul(g_age_str), nullptr));
@@ -350,10 +356,12 @@ static constexpr HXoption g_options_table[] = {
 static std::vector<static_module> g_dfl_svc_plugins =
 	{{"libgxs_mysql_adaptor.so", SVC_mysql_adaptor}};
 
-static int main(int argc, const char **argv)
+static int main(int argc, char **argv)
 {
-	if (HX_getopt(g_options_table, &argc, &argv, HXOPT_USAGEONERR) != HXOPT_ERR_SUCCESS)
+	if (HX_getopt5(g_options_table, argv, &argc, &argv,
+	    HXOPT_USAGEONERR) != HXOPT_ERR_SUCCESS)
 		return EXIT_FAILURE;
+	auto cl_0a = make_scope_exit([&]() { HX_zvecfree(argv); });
 	if (g_language == nullptr) {
 		fprintf(stderr, "You need to specify the -l option\n");
 		return EXIT_FAILURE;
@@ -477,11 +485,13 @@ static bool recalc_sizes(const char *dir)
 	return true;
 }
 
-static int main(int argc, const char **argv)
+static int main(int argc, char **argv)
 {
 	bool ok = false;
-	if (HX_getopt(g_options_table, &argc, &argv, HXOPT_USAGEONERR) != HXOPT_ERR_SUCCESS)
+	if (HX_getopt5(g_options_table, argv, &argc, &argv,
+	    HXOPT_USAGEONERR) != HXOPT_ERR_SUCCESS)
 		return EXIT_FAILURE;
+	auto cl_0 = make_scope_exit([&]() { HX_zvecfree(argv); });
 	if (strcmp(argv[0], "purge-datafiles") == 0)
 		ok = exmdb_client::purge_datafiles(g_storedir);
 	else if (strcmp(argv[0], "unload") == 0)
@@ -672,14 +682,15 @@ static errno_t clear_rwz()
 	return 0;
 }
 
-int main(int argc, const char **argv)
+int main(int argc, char **argv)
 {
 	using namespace global;
 
 	setvbuf(stdout, nullptr, _IOLBF, 0);
-	if (HX_getopt(global::g_options_table, &argc, &argv,
+	if (HX_getopt5(global::g_options_table, argv, &argc, &argv,
 	    HXOPT_RQ_ORDER | HXOPT_USAGEONERR) != HXOPT_ERR_SUCCESS)
 		return EXIT_FAILURE;
+	auto cl_0 = make_scope_exit([&]() { HX_zvecfree(argv); });
 	--argc;
 	++argv;
 	if (argc == 0)
