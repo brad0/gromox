@@ -613,7 +613,7 @@ static BOOL db_engine_search_folder(const char *dir, cpid_t cpid,
 	for (size_t i = 0, count = 0; i < pmessage_ids->count; ++i, ++count) {
 		if (g_notify_stop)
 			break;
-		auto sql_transact1 = gx_sql_begin(pdb->psqlite, txn_mode::read); // ends before writes take place
+		auto sql_transact1 = gx_sql_begin(pdb->psqlite, txn_mode::write);
 		if (!sql_transact1)
 			return false;
 		if (!cu_eval_msg_restriction(pdb->psqlite,
@@ -631,6 +631,8 @@ static BOOL db_engine_search_folder(const char *dir, cpid_t cpid,
 			break;
 		else if (ret != SQLITE_OK)
 			continue;
+		if (sql_transact1.commit() != SQLITE_OK)
+			return false;
 		/*
 		 * Update other search folders (seems like it is allowed to
 		 * have a search folder have a scope containing another search
@@ -644,8 +646,6 @@ static BOOL db_engine_search_folder(const char *dir, cpid_t cpid,
 		 */
 		pdb->notify_link_creation(search_fid, pmessage_ids->pids[i], *dbase);
 		dbase.reset();
-		if (sql_transact1.commit() != SQLITE_OK)
-			return false;
 	}
 	return TRUE;
 }
