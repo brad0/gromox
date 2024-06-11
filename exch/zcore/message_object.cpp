@@ -7,6 +7,7 @@
 #include <cstring>
 #include <memory>
 #include <utility>
+#include <vector>
 #include <libHX/string.h>
 #include <gromox/defs.h>
 #include <gromox/ext_buffer.hpp>
@@ -813,13 +814,12 @@ BOOL message_object::get_properties(const PROPTAG_ARRAY *pproptags,
 }
 
 static BOOL message_object_set_properties_internal(message_object *pmessage,
-    BOOL b_check, const TPROPVAL_ARRAY *ppropvals)
+    BOOL b_check, const TPROPVAL_ARRAY *ppropvals) try
 {
 	uint8_t tmp_bytes[3];
 	PROBLEM_ARRAY problems;
 	PROBLEM_ARRAY tmp_problems;
 	TPROPVAL_ARRAY tmp_propvals;
-	uint16_t *poriginal_indices;
 	TPROPVAL_ARRAY tmp_propvals1;
 	TAGGED_PROPVAL propval_buff[3];
 	
@@ -833,9 +833,7 @@ static BOOL message_object_set_properties_internal(message_object *pmessage,
 	tmp_propvals.ppropval = cu_alloc<TAGGED_PROPVAL>(ppropvals->count);
 	if (tmp_propvals.ppropval == nullptr)
 		return FALSE;
-	poriginal_indices = cu_alloc<uint16_t>(ppropvals->count);
-	if (poriginal_indices == nullptr)
-		return FALSE;
+	std::vector<uint16_t> poriginal_indices;
 	for (unsigned int i = 0; i < ppropvals->count; ++i) {
 		const auto &pv = ppropvals->ppropval[i];
 		if (b_check) {
@@ -873,7 +871,7 @@ static BOOL message_object_set_properties_internal(message_object *pmessage,
 			}
 		}
 		tmp_propvals.ppropval[tmp_propvals.count] = pv;
-		poriginal_indices[tmp_propvals.count++] = i;
+		poriginal_indices.push_back(i);
 	}
 	if (tmp_propvals.count == 0)
 		return TRUE;
@@ -897,6 +895,9 @@ static BOOL message_object_set_properties_internal(message_object *pmessage,
 			return FALSE;	
 	}
 	return TRUE;
+} catch (const std::bad_alloc &) {
+	mlog(LV_ERR, "E-1748: ENOMEM");
+	return false;
 }
 
 BOOL message_object::set_properties(TPROPVAL_ARRAY *ppropvals)
@@ -906,13 +907,12 @@ BOOL message_object::set_properties(TPROPVAL_ARRAY *ppropvals)
 						pmessage, TRUE, ppropvals);
 }
 
-BOOL message_object::remove_properties(const PROPTAG_ARRAY *pproptags)
+BOOL message_object::remove_properties(const PROPTAG_ARRAY *pproptags) try
 {
 	auto pmessage = this;
 	PROBLEM_ARRAY problems;
 	PROBLEM_ARRAY tmp_problems;
 	PROPTAG_ARRAY tmp_proptags;
-	uint16_t *poriginal_indices;
 	
 	if (!pmessage->b_writable)
 		return FALSE;
@@ -924,9 +924,7 @@ BOOL message_object::remove_properties(const PROPTAG_ARRAY *pproptags)
 	tmp_proptags.pproptag = cu_alloc<uint32_t>(pproptags->count);
 	if (tmp_proptags.pproptag == nullptr)
 		return FALSE;
-	poriginal_indices = cu_alloc<uint16_t>(pproptags->count);
-	if (poriginal_indices == nullptr)
-		return FALSE;
+	std::vector<uint16_t> poriginal_indices;
 	for (unsigned int i = 0; i < pproptags->count; ++i) {
 		const auto tag = pproptags->pproptag[i];
 		if (msgo_is_readonly_prop(pmessage, tag)) {
@@ -934,7 +932,7 @@ BOOL message_object::remove_properties(const PROPTAG_ARRAY *pproptags)
 			continue;
 		}
 		tmp_proptags.pproptag[tmp_proptags.count] = tag;
-		poriginal_indices[tmp_proptags.count++] = i;
+		poriginal_indices.push_back(i);
 	}
 	if (tmp_proptags.count == 0)
 		return TRUE;
@@ -958,6 +956,9 @@ BOOL message_object::remove_properties(const PROPTAG_ARRAY *pproptags)
 			return FALSE;	
 	}
 	return TRUE;
+} catch (const std::bad_alloc &) {
+	mlog(LV_ERR, "E-1749: ENOMEM");
+	return false;
 }
 
 BOOL message_object::copy_to(message_object *pmessage_src,
