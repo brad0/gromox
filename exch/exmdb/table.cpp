@@ -1590,7 +1590,7 @@ static BOOL query_hierarchy(db_conn_ptr &&pdb, cpid_t cpid, uint32_t table_id,
 	auto pstmt = pdb->eph_prep(sql_string);
 	if (pstmt == nullptr)
 		return FALSE;
-	auto sql_transact = gx_sql_begin(pdb->psqlite, txn_mode::write);
+	auto sql_transact = gx_sql_begin(pdb->psqlite, txn_mode::read);
 	if (!sql_transact)
 		return false;
 	while (pstmt.step() == SQLITE_ROW) {
