@@ -597,7 +597,7 @@ int main(int argc, char **argv)
 	if (HX_getopt5(g_options_table, argv, &argc, &argv,
 	    HXOPT_USAGEONERR) != HXOPT_ERR_SUCCESS)
 		return EXIT_FAILURE;
-	auto cl_0a = make_scope_exit([&]() { HX_zvecfree(argv); });
+	auto cl_0a = make_scope_exit([=]() { HX_zvecfree(argv); });
 	if (argc != 2) {
 		terse_help();
 		return EXIT_FAILURE;

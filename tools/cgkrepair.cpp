@@ -147,7 +147,7 @@ int main(int argc, char **argv)
 	if (HX_getopt5(g_options_table, argv, &argc, &argv,
 	    HXOPT_USAGEONERR) != HXOPT_ERR_SUCCESS)
 		return EXIT_FAILURE;
-	auto cl_0 = make_scope_exit([&]() { HX_zvecfree(argv); });
+	auto cl_0 = make_scope_exit([=]() { HX_zvecfree(argv); });
 	if (g_primail == nullptr) {
 		fprintf(stderr, "Usage: cgkrepair -e primary_mailaddr\n");
 		return EXIT_FAILURE;

@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 	if (HX_getopt5(g_options_table, argv, &argc, &argv,
 	    HXOPT_USAGEONERR) != HXOPT_ERR_SUCCESS)
 		return EXIT_FAILURE;
-	auto cl_0 = make_scope_exit([&]() { HX_zvecfree(argv); });
+	auto cl_0 = make_scope_exit([=]() { HX_zvecfree(argv); });
 
 	std::shared_ptr<CONFIG_FILE> pconfig;
 	if (opt_config_file == nullptr) {

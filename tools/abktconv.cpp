@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 	if (HX_getopt5(g_options_table, argv, &argc, &argv,
 	    HXOPT_USAGEONERR) != HXOPT_ERR_SUCCESS)
 		return EXIT_FAILURE;
-	auto cl_0 = make_scope_exit([&]() { HX_zvecfree(argv); });
+	auto cl_0 = make_scope_exit([=]() { HX_zvecfree(argv); });
 	textmaps_init(PKGDATADIR);
 	if (g_cpid != CP_ACP && cpid_to_cset(g_cpid) == nullptr) {
 		printf("Unknown codepage %u\n", g_cpid);
