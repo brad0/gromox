@@ -6,7 +6,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <memory>
-#include <vector>
 #include <libHX/string.h>
 #include <gromox/defs.h>
 #include <gromox/ext_buffer.hpp>
@@ -1055,7 +1054,7 @@ static bool mo_has_open_streams(message_object *pmessage, uint32_t proptag)
 }
 
 static BOOL message_object_set_properties_internal(message_object *pmessage,
-    BOOL b_check, const TPROPVAL_ARRAY *ppropvals, PROBLEM_ARRAY *pproblems) try
+	BOOL b_check, const TPROPVAL_ARRAY *ppropvals, PROBLEM_ARRAY *pproblems)
 {
 	uint8_t tmp_bytes[3];
 	PROBLEM_ARRAY tmp_problems;
@@ -1073,8 +1072,10 @@ static BOOL message_object_set_properties_internal(message_object *pmessage,
 	tmp_propvals.ppropval = cu_alloc<TAGGED_PROPVAL>(ppropvals->count);
 	if (tmp_propvals.ppropval == nullptr)
 		return FALSE;
-
-	std::vector<uint16_t> poriginal_indices;
+	auto poriginal_indices = cu_alloc<uint16_t>(ppropvals->count);
+	if (poriginal_indices == nullptr)
+		return FALSE;
+	
 	auto dir = pmessage->plogon->get_dir();
 	for (unsigned int i = 0; i < ppropvals->count; ++i) {
 		/* if property is being open as stream object, can not be modified */
@@ -1115,8 +1116,8 @@ static BOOL message_object_set_properties_internal(message_object *pmessage,
 					return FALSE;	
 			}
 		}
-		tmp_propvals.ppropval[tmp_propvals.count++] = pv;
-		poriginal_indices.push_back(i);
+		tmp_propvals.ppropval[tmp_propvals.count] = pv;
+		poriginal_indices[tmp_propvals.count++] = i;
 	}
 	if (tmp_propvals.count == 0)
 		return TRUE;
@@ -1141,9 +1142,6 @@ static BOOL message_object_set_properties_internal(message_object *pmessage,
 			return FALSE;	
 	}
 	return TRUE;
-} catch (const std::bad_alloc &) {
-	mlog(LV_ERR, "E-1745: ENOMEM");
-	return false;
 }
 
 BOOL message_object::set_properties(const TPROPVAL_ARRAY *ppropvals,
@@ -1155,7 +1153,7 @@ BOOL message_object::set_properties(const TPROPVAL_ARRAY *ppropvals,
 }
 
 BOOL message_object::remove_properties(const PROPTAG_ARRAY *pproptags,
-    PROBLEM_ARRAY *pproblems) try
+    PROBLEM_ARRAY *pproblems)
 {
 	auto pmessage = this;
 	PROBLEM_ARRAY tmp_problems;
@@ -1171,7 +1169,9 @@ BOOL message_object::remove_properties(const PROPTAG_ARRAY *pproptags,
 	tmp_proptags.pproptag = cu_alloc<uint32_t>(pproptags->count);
 	if (tmp_proptags.pproptag == nullptr)
 		return FALSE;
-	std::vector<uint16_t> poriginal_indices;
+	auto poriginal_indices = cu_alloc<uint16_t>(pproptags->count);
+	if (poriginal_indices == nullptr)
+		return FALSE;
 	/* if property is being open as stream object, can not be removed */
 	for (unsigned int i = 0; i < pproptags->count; ++i) {
 		const auto tag = pproptags->pproptag[i];
@@ -1190,7 +1190,7 @@ BOOL message_object::remove_properties(const PROPTAG_ARRAY *pproptags,
 				tag, static_cast<unsigned long long>(message_id), instance_id);
 			continue;
 		default:
-			poriginal_indices.push_back(i);
+			poriginal_indices[tmp_proptags.count] = i;
 			tmp_proptags.emplace_back(tag);
 			break;
 		}
@@ -1218,9 +1218,6 @@ BOOL message_object::remove_properties(const PROPTAG_ARRAY *pproptags,
 			return FALSE;	
 	}
 	return TRUE;
-} catch (const std::bad_alloc &) {
-	mlog(LV_ERR, "E-1746: ENOMEM");
-	return false;
 }
 
 BOOL message_object::copy_to(message_object *pmessage_src,

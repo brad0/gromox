@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <cstring>
 #include <utility>
-#include <vector>
 #include <gromox/defs.h>
 #include <gromox/mapidefs.h>
 #include <gromox/proc_common.h>
@@ -566,7 +565,7 @@ ec_error_t rop_querynamedproperties(uint8_t query_flags, const GUID *pguid,
 
 ec_error_t rop_copyproperties(uint8_t want_asynchronous, uint8_t copy_flags,
     const PROPTAG_ARRAY *pproptags, PROBLEM_ARRAY *pproblems, LOGMAP *plogmap,
-    uint8_t logon_id, uint32_t hsrc, uint32_t hdst) try
+    uint8_t logon_id, uint32_t hsrc, uint32_t hdst)
 {
 	BOOL b_force;
 	BOOL b_result;
@@ -601,7 +600,9 @@ ec_error_t rop_copyproperties(uint8_t want_asynchronous, uint8_t copy_flags,
 	pproblems->pproblem = cu_alloc<PROPERTY_PROBLEM>(pproptags->count);
 	if (pproblems->pproblem == nullptr)
 		return ecServerOOM;
-	std::vector<uint16_t> poriginal_indices;
+	auto poriginal_indices = cu_alloc<uint16_t>(pproptags->count);
+	if (poriginal_indices == nullptr)
+		return ecError;
 	switch (object_type) {
 	case ems_objtype::folder: {
 		auto fldsrc = static_cast<folder_object *>(pobject);
@@ -625,7 +626,7 @@ ec_error_t rop_copyproperties(uint8_t want_asynchronous, uint8_t copy_flags,
 			}
 			if (copy_flags & MAPI_NOREPLACE && proptags1.has(tag))
 				continue;
-			poriginal_indices.push_back(i);
+			poriginal_indices[proptags.count] = i;
 			proptags.emplace_back(tag);
 		}
 		if (!fldsrc->get_properties(&proptags, &propvals))
@@ -675,7 +676,7 @@ ec_error_t rop_copyproperties(uint8_t want_asynchronous, uint8_t copy_flags,
 			}
 			if (copy_flags & MAPI_NOREPLACE && proptags1.has(tag))
 				continue;
-			poriginal_indices.push_back(i);
+			poriginal_indices[proptags.count] = i;
 			proptags.emplace_back(tag);
 		}
 		if (!msgsrc->get_properties(0, &proptags, &propvals))
@@ -709,7 +710,7 @@ ec_error_t rop_copyproperties(uint8_t want_asynchronous, uint8_t copy_flags,
 			}
 			if (copy_flags & MAPI_NOREPLACE && proptags1.has(tag))
 				continue;
-			poriginal_indices.push_back(i);
+			poriginal_indices[proptags.count] = i;
 			proptags.emplace_back(tag);
 		}
 		if (!atsrc->get_properties(0, &proptags, &propvals))
@@ -729,9 +730,6 @@ ec_error_t rop_copyproperties(uint8_t want_asynchronous, uint8_t copy_flags,
 	default:
 		return ecNotSupported;
 	}
-} catch (const std::bad_alloc &) {
-	mlog(LV_ERR, "E-1747: ENOMEM");
-	return ecServerOOM;
 }
 
 ec_error_t rop_copyto(uint8_t want_asynchronous, uint8_t want_subobjects,
