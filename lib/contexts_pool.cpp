@@ -222,6 +222,7 @@ static void *ctxp_scanwork(void *pparam)
 		auto ptail = double_list_get_tail(&g_context_lists[static_cast<int>(sctx_status::polling)]);
 		while ((pnode = double_list_pop_front(&g_context_lists[static_cast<int>(sctx_status::polling)])) != nullptr) {
 			pcontext = (SCHEDULE_CONTEXT*)pnode->pdata;
+			pcontext->b_timeout = false;
 			if (!pcontext->b_waiting) {
 				pcontext->type = sctx_status::switching;
 				double_list_append_as_tail(&temp_list, pnode);

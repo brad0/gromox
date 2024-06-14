@@ -357,12 +357,16 @@ static tproc_status ps_stat_notifying(imap_context *pcontext)
 static tproc_status ps_stat_rdcmd(imap_context *pcontext)
 {
 	ssize_t read_len;
-	if (pcontext->connection.ssl != nullptr)
+	if (pcontext->b_timeout) {
+		read_len = -1;
+		errno = EAGAIN;
+	} else if (pcontext->connection.ssl != nullptr) {
 		read_len = SSL_read(pcontext->connection.ssl, pcontext->read_buffer +
 		           pcontext->read_offset, 64*1024 - pcontext->read_offset);
-	else
+	} else {
 		read_len = read(pcontext->connection.sockd, pcontext->read_buffer +
 		           pcontext->read_offset, 64*1024 - pcontext->read_offset);
+	}
 	auto current_time = tp_now();
 	if (0 == read_len) {
 		imap_parser_log_info(pcontext, LV_DEBUG, "connection lost");
@@ -706,10 +710,14 @@ static tproc_status ps_stat_appending(imap_context *pcontext)
 		return ps_end_processing(pcontext, imap_reply_str, string_length);
 	}
 	ssize_t read_len;
-	if (pcontext->connection.ssl != nullptr)
+	if (pcontext->b_timeout) {
+		read_len = -1;
+		errno = EAGAIN;
+	} else if (pcontext->connection.ssl != nullptr) {
 		read_len = SSL_read(pcontext->connection.ssl, pbuff, len);
-	else
+	} else {
 		read_len = read(pcontext->connection.sockd, pbuff, len);
+	}
 	auto current_time = tp_now();
 	if (0 == read_len) {
 		imap_parser_log_info(pcontext, LV_DEBUG, "connection lost");
