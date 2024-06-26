@@ -343,7 +343,10 @@ tproc_status pop3_parser_process(schedule_context *vcontext)
 		return tproc_status::cont;
 	}
 
-	if (NULL != pcontext->connection.ssl) {
+	if (pcontext->b_timeout) {
+		read_len = -1;
+		errno = EAGAIN;
+	} else if (pcontext->connection.ssl != nullptr) {
 		read_len = SSL_read(pcontext->connection.ssl, pcontext->read_buffer +
 					pcontext->read_offset, 1024 - pcontext->read_offset);
 	} else {

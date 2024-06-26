@@ -33,7 +33,8 @@ enum class sctx_status {
 struct schedule_context {
 	DOUBLE_LIST_NODE node{};
 	sctx_status type = sctx_status::free;
-	BOOL b_waiting = false; /* is still in epoll queue */
+	bool b_waiting = false; /* is still in epoll queue */
+	bool b_timeout = false; /* connection timeout */
 	int polling_mask = 0;
 	unsigned int context_id = 0;
 };

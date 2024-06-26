@@ -1334,9 +1334,15 @@ static char *now_str(char *buf, size_t bufsize)
 static ssize_t htparse_readsock(HTTP_CONTEXT *pcontext, const char *tag,
     void *pbuff, unsigned int size)
 {
-	ssize_t actual_read = pcontext->connection.ssl != nullptr ?
+	ssize_t actual_read;
+	if (pcontext->b_timeout) {
+		actual_read = -1;
+		errno = EAGAIN;
+	} else {
+		actual_read = pcontext->connection.ssl != nullptr ?
 	                      SSL_read(pcontext->connection.ssl, pbuff, size) :
 	                      read(pcontext->connection.sockd, pbuff, size);
+	}
 	if (actual_read <= 0)
 		return actual_read;
 	if (g_http_debug) {

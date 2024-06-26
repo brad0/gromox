@@ -299,8 +299,6 @@ static void *imls_thrwork(void *arg)
 			continue;
 		}
 		uint16_t client_port = strtoul(client_txtport, nullptr, 0);
-		if (fcntl(sockd2, F_SETFL, O_NONBLOCK) < 0)
-			mlog(LV_WARN, "W-1416: fcntl: %s", strerror(errno));
 		static constexpr int flag = 1;
 		if (setsockopt(sockd2, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag)) < 0)
 			mlog(LV_WARN, "W-1417: setsockopt: %s", strerror(errno));

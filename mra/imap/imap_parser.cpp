@@ -357,12 +357,16 @@ static tproc_status ps_stat_notifying(imap_context *pcontext)
 static tproc_status ps_stat_rdcmd(imap_context *pcontext)
 {
 	ssize_t read_len;
-	if (pcontext->connection.ssl != nullptr)
+	if (pcontext->b_timeout) {
+		read_len = -1;
+		errno = EAGAIN;
+	} else if (pcontext->connection.ssl != nullptr) {
 		read_len = SSL_read(pcontext->connection.ssl, pcontext->read_buffer +
 		           pcontext->read_offset, 64*1024 - pcontext->read_offset);
-	else
+	} else {
 		read_len = read(pcontext->connection.sockd, pcontext->read_buffer +
 		           pcontext->read_offset, 64*1024 - pcontext->read_offset);
+	}
 	auto current_time = tp_now();
 	if (0 == read_len) {
 		imap_parser_log_info(pcontext, LV_DEBUG, "connection lost");
@@ -373,13 +377,12 @@ static tproc_status ps_stat_rdcmd(imap_context *pcontext)
 			return ps_end_processing(pcontext);
 		}
 		/* check if context is timed out */
-		if (current_time - pcontext->connection.last_timestamp < g_timeout)
+		auto dif = current_time - pcontext->connection.last_timestamp;
+
+		if (!pcontext->is_authed() && dif < g_timeout)
 			return tproc_status::polling_rdonly;
-		if (pcontext->is_authed()) {
-			std::unique_lock ll_hold(g_list_lock);
-			g_sleeping_list.push_back(pcontext);
-			return tproc_status::sleeping;
-		}
+		if (pcontext->is_authed() && dif < g_autologout_time)
+			return tproc_status::polling_rdonly;
 		/* IMAP_CODE_2180011: BAD timeout */
 		size_t string_length = 0;
 		auto imap_reply_str = resource_get_imap_code(1811, 1, &string_length);
@@ -707,10 +710,14 @@ static tproc_status ps_stat_appending(imap_context *pcontext)
 		return ps_end_processing(pcontext, imap_reply_str, string_length);
 	}
 	ssize_t read_len;
-	if (pcontext->connection.ssl != nullptr)
+	if (pcontext->b_timeout) {
+		read_len = -1;
+		errno = EAGAIN;
+	} else if (pcontext->connection.ssl != nullptr) {
 		read_len = SSL_read(pcontext->connection.ssl, pbuff, len);
-	else
+	} else {
 		read_len = read(pcontext->connection.sockd, pbuff, len);
+	}
 	auto current_time = tp_now();
 	if (0 == read_len) {
 		imap_parser_log_info(pcontext, LV_DEBUG, "connection lost");

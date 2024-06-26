@@ -144,10 +144,10 @@ level 2 emits all commands.
 Default: \fI0\fP
 .TP
 \fBimap_conn_timeout\fP
-If an IMAP connection stalls (writing responses to client) for the given
-period, the connection is terminated. If unauthenticated IMAP connections do
-not have any activity (requests from clients) for the given period, the
-connection is terminated.
+If unauthenticated IMAP connections do not have any activity (requests from
+clients) for the given period, the connection is terminated.
+(Connections that are authenticated are subject to the regular
+imap_autologout_time.)
 .br
 Default: \fI3 minutes\fP
 .TP
